@@ -102,7 +102,6 @@ class LibiconvConan(ConanFile):
                 elif self.is_mingw:
                     self.build_autotools()
                 else:
-                    # TODO : clang on Windows and others
                     raise Exception("unsupported build")
         else:
             self.build_autotools()
