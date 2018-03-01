@@ -16,6 +16,7 @@ class LibiconvConan(ConanFile):
     options = {"shared": [True, False], "fPIC": [True, False]}
     default_options = "shared=False", "fPIC=True"
     archive_name = "{0}-{1}".format(name, version)
+    short_paths = True
 
     @property
     def is_mingw(self):
