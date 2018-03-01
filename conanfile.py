@@ -92,8 +92,16 @@ class LibiconvConan(ConanFile):
                 env_build.make()
                 env_build.make(args=["install"])
 
+    def fix_windows_permissions(self, folder):
+        """ grant ACL permissions so Cygwin has necessary access rights """
+        if not os.path.isdir(folder):
+            os.makedirs(folder)
+        self.run('cacls %s /T /E /G "%s\\%s":F' % (folder, os.environ['USERDOMAIN'], os.environ['USERNAME']))
+
     def build(self):
         if self.settings.os == "Windows":
+            self.fix_windows_permissions(self.build_folder)
+            self.fix_windows_permissions(self.package_folder)
             cygwin_bin = self.deps_env_info['cygwin_installer'].CYGWIN_BIN
             with tools.environment_append({'PATH': [cygwin_bin],
                                            'CONAN_BASH_PATH': '%s/bash.exe' % cygwin_bin}):
