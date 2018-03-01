@@ -93,16 +93,19 @@ class LibiconvConan(ConanFile):
 
     def build(self):
         if self.settings.os == "Windows":
-            cygwin_bin = self.deps_env_info['cygwin_installer'].CYGWIN_BIN
-            with tools.environment_append({'PATH': [cygwin_bin],
-                                           'CONAN_BASH_PATH': '%s/bash.exe' % cygwin_bin}):
-                if self.is_msvc:
-                    with tools.vcvars(self.settings):
-                        self.build_autotools()
-                elif self.is_mingw:
+            if tools.os_info.detect_windows_subsystem() not in ("cygwin", "msys2"):
+                raise Exception("This recipe needs a Windows Subsystem to be compiled. "
+                                "You can specify a build_require to:"
+                                " 'msys2_installer/latest@bincrafters/stable' or"
+                                " 'cygwin_installer/2.9.0@bincrafters/stable' or"
+                                " put in the PATH your own installation")
+            if self.is_msvc:
+                with tools.vcvars(self.settings):
                     self.build_autotools()
-                else:
-                    raise Exception("unsupported build")
+            elif self.is_mingw:
+                self.build_autotools()
+            else:
+                raise Exception("unsupported build")
         else:
             self.build_autotools()
 
