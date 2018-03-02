@@ -16,6 +16,7 @@ class LibiconvConan(ConanFile):
     options = {"shared": [True, False], "fPIC": [True, False]}
     default_options = "shared=False", "fPIC=True"
     archive_name = "{0}-{1}".format(name, version)
+    short_paths = True
 
     @property
     def is_mingw(self):
@@ -91,8 +92,16 @@ class LibiconvConan(ConanFile):
                 env_build.make()
                 env_build.make(args=["install"])
 
+    def fix_windows_permissions(self, folder):
+        """ grant ACL permissions so Cygwin has necessary access rights """
+        if not os.path.isdir(folder):
+            os.makedirs(folder)
+        self.run('cacls %s /T /E /G "%s\\%s":F' % (folder, os.environ['USERDOMAIN'], os.environ['USERNAME']))
+
     def build(self):
         if self.settings.os == "Windows":
+            self.fix_windows_permissions(self.build_folder)
+            self.fix_windows_permissions(self.package_folder)
             if tools.os_info.detect_windows_subsystem() not in ("cygwin", "msys2"):
                 raise Exception("This recipe needs a Windows Subsystem to be compiled. "
                                 "You can specify a build_require to:"
