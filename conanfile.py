@@ -29,6 +29,10 @@ class LibiconvConan(ConanFile):
     def configure(self):
         del self.settings.compiler.libcxx
 
+    def config_options(self):
+        if self.settings.os == 'Windows':
+            del self.options.fPIC
+
     def source(self):
         source_url = "https://ftp.gnu.org/gnu/libiconv"
         tools.get("{0}/{1}.tar.gz".format(source_url, self.archive_name))
@@ -51,7 +55,9 @@ class LibiconvConan(ConanFile):
                 rc = "windres --target=pe-x86-64"
 
         env_build = AutoToolsBuildEnvironment(self, win_bash=win_bash)
-        env_build.fpic = self.options.fPIC
+
+        if self.settings.os != "Windows":
+            env_build.fpic = self.options.fPIC
 
         configure_args = ['--prefix=%s' % prefix]
         if self.options.shared:
