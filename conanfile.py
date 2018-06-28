@@ -10,6 +10,8 @@ class LibiconvConan(ConanFile):
     version = "1.15"
     description = "Convert text to and from Unicode"
     url = "https://github.com/bincrafters/conan-libiconv"
+    homepage = "https://www.gnu.org/software/libiconv/"
+    author = "Bincrafters <bincrafters@gmail.com>"
     license = "LGPL-2.1"
     exports = ["LICENSE.md"]
     settings = "os", "compiler", "build_type", "arch"
