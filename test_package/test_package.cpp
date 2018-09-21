@@ -1,7 +1,12 @@
 #include <cstddef>
 #include <iostream>
 #include <iconv.h>
+
+#if _MSC_VER && _MSC_VER<1600
+typedef unsigned __int32 uint32_t;
+#else
 #include <cstdint>
+#endif
 
 int main() {
     iconv_t context = iconv_open("UCS-4-INTERNAL", "US-ASCII");
