@@ -122,7 +122,7 @@ class LibiconvConan(ConanFile):
         self.copy(os.path.join(self.archive_name, "COPYING.LIB"), dst="licenses", ignore_case=True, keep_path=False)
 
     def package_info(self):
-        if self.settings.os == "Windows" and self.options.shared:
+        if self.is_msvc and self.options.shared:
             self.cpp_info.libs = ['iconv.dll.lib']
         else:
             self.cpp_info.libs = ['iconv']
