@@ -56,6 +56,13 @@ class LibiconvConan(ConanFile):
                 host = "x86_64-w64-mingw32"
                 rc = "windres --target=pe-x86-64"
 
+        #
+        # If you pass --build when building for iPhoneSimulator, the configure script halts.
+        # So, disable passing --build by setting it to False.
+        #
+        if self.settings.os == "iOS" and self.settings.arch == "x86_64":
+            build = False
+
         env_build = AutoToolsBuildEnvironment(self, win_bash=win_bash)
 
         if self.settings.os != "Windows":
