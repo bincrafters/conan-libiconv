@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from conans import ConanFile, tools, AutoToolsBuildEnvironment
+from conans.errors import ConanInvalidConfiguration
 import os
 
 
@@ -12,20 +13,21 @@ class LibiconvConan(ConanFile):
     url = "https://github.com/bincrafters/conan-libiconv"
     homepage = "https://www.gnu.org/software/libiconv/"
     author = "Bincrafters <bincrafters@gmail.com>"
+    topics = "libiconv", "iconv", "text", "encoding", "locale", "unicode", "conversion"
     license = "LGPL-2.1"
     exports = ["LICENSE.md"]
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "fPIC": [True, False]}
-    default_options = "shared=False", "fPIC=True"
-    archive_name = "{0}-{1}".format(name, version)
+    default_options = {'shared': False, 'fPIC': True}
     short_paths = True
+    _source_subfolder = "source_subfolder"
 
     @property
-    def is_mingw(self):
-        return self.settings.os == 'Windows' and self.settings.compiler == 'gcc'
+    def _is_mingw_windows(self):
+        return self.settings.os == 'Windows' and self.settings.compiler == 'gcc' and os.name == 'nt'
 
     @property
-    def is_msvc(self):
+    def _is_msvc(self):
         return self.settings.compiler == 'Visual Studio'
 
     def configure(self):
@@ -36,16 +38,19 @@ class LibiconvConan(ConanFile):
             del self.options.fPIC
 
     def source(self):
+        archive_name = "{0}-{1}".format(self.name, self.version)
         source_url = "https://ftp.gnu.org/gnu/libiconv"
-        tools.get("{0}/{1}.tar.gz".format(source_url, self.archive_name))
+        tools.get("{0}/{1}.tar.gz".format(source_url, archive_name),
+                  sha256="ccf536620a45458d26ba83887a983b96827001e92a13847b45e4925cc8913178")
+        os.rename(archive_name, self._source_subfolder)
 
-    def build_autotools(self):
+    def _build_autotools(self):
         prefix = os.path.abspath(self.package_folder)
         win_bash = False
         rc = None
         host = None
         build = None
-        if self.is_mingw or self.is_msvc:
+        if self._is_mingw_windows or self._is_msvc:
             prefix = prefix.replace('\\', '/')
             win_bash = True
             build = False
@@ -76,11 +81,11 @@ class LibiconvConan(ConanFile):
 
         env_vars = {}
 
-        if self.is_mingw:
+        if self._is_mingw_windows:
             configure_args.extend(['CPPFLAGS=-I%s/include' % prefix,
                                    'LDFLAGS=-L%s/lib' % prefix,
                                    'RANLIB=:'])
-        if self.is_msvc:
+        if self._is_msvc:
             runtime = str(self.settings.compiler.runtime)
             configure_args.extend(['CC=$PWD/build-aux/compile cl -nologo',
                                    'CFLAGS=-%s' % runtime,
@@ -95,41 +100,42 @@ class LibiconvConan(ConanFile):
                                    'RANLIB=:'])
             env_vars['win32_target'] = '_WIN32_WINNT_VISTA'
 
-            with tools.chdir(self.archive_name):
+            with tools.chdir(self._source_subfolder):
                 tools.run_in_windows_bash(self, 'chmod +x build-aux/ar-lib build-aux/compile')
 
         if rc:
             configure_args.extend(['RC=%s' % rc, 'WINDRES=%s' % rc])
 
-        with tools.chdir(self.archive_name):
+        with tools.chdir(self._source_subfolder):
             with tools.environment_append(env_vars):
                 env_build.configure(args=configure_args, host=host, build=build)
                 env_build.make()
-                env_build.make(args=["install"])
+                env_build.install()
 
     def build(self):
         if self.settings.os == "Windows":
             if tools.os_info.detect_windows_subsystem() not in ("cygwin", "msys2"):
-                raise Exception("This recipe needs a Windows Subsystem to be compiled. "
+                raise ConanInvalidConfiguration("This recipe needs a Windows Subsystem to be compiled. "
                                 "You can specify a build_require to:"
                                 " 'msys2_installer/latest@bincrafters/stable' or"
                                 " 'cygwin_installer/2.9.0@bincrafters/stable' or"
                                 " put in the PATH your own installation")
-            if self.is_msvc:
+            if self._is_msvc:
                 with tools.vcvars(self.settings):
-                    self.build_autotools()
-            elif self.is_mingw:
-                self.build_autotools()
+                    self._build_autotools()
+            elif self._is_mingw_windows:
+                self._build_autotools()
             else:
-                raise Exception("unsupported build")
+                raise ConanInvalidConfiguration("unsupported build")
         else:
-            self.build_autotools()
+            self._build_autotools()
 
     def package(self):
-        self.copy(os.path.join(self.archive_name, "COPYING.LIB"), dst="licenses", ignore_case=True, keep_path=False)
+        self.copy(os.path.join(self._source_subfolder, "COPYING.LIB"),
+                  dst="licenses", ignore_case=True, keep_path=False)
 
     def package_info(self):
-        if self.is_msvc and self.options.shared:
+        if self._is_msvc and self.options.shared:
             self.cpp_info.libs = ['iconv.dll.lib']
         else:
             self.cpp_info.libs = ['iconv']
