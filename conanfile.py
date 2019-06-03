@@ -4,6 +4,7 @@
 from conans import ConanFile, tools, AutoToolsBuildEnvironment
 from conans.errors import ConanInvalidConfiguration
 import os
+import glob
 
 
 class LibiconvConan(ConanFile):
@@ -133,6 +134,10 @@ class LibiconvConan(ConanFile):
     def package(self):
         self.copy(os.path.join(self._source_subfolder, "COPYING.LIB"),
                   dst="licenses", ignore_case=True, keep_path=False)
+        # remove libtool .la files - they have hard-coded paths
+        with tools.chdir(os.path.join(self.package_folder, "lib")):
+            for filename in glob.glob("*.la"):
+                os.unlink(filename)
 
     def package_info(self):
         if self._is_msvc and self.options.shared:
