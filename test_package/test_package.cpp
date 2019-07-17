@@ -1,6 +1,7 @@
 #include <cstddef>
 #include <iostream>
 #include <iconv.h>
+#include <cstdlib> //for EXIT_FAILURE
 
 #if _MSC_VER && _MSC_VER<1600
 typedef unsigned __int32 uint32_t;
