@@ -31,6 +31,11 @@ class LibiconvConan(ConanFile):
     def _is_msvc(self):
         return self.settings.compiler == 'Visual Studio'
 
+    def build_requirements(self):
+        if tools.os_info.is_windows:
+            if "CONAN_BASH_PATH" not in os.environ:
+                self.build_requires("cygwin_installer/2.9.0@bincrafters/stable")
+
     def configure(self):
         del self.settings.compiler.libcxx
 
@@ -47,13 +52,11 @@ class LibiconvConan(ConanFile):
 
     def _build_autotools(self):
         prefix = os.path.abspath(self.package_folder)
-        win_bash = False
         rc = None
         host = None
         build = None
         if self._is_mingw_windows or self._is_msvc:
             prefix = prefix.replace('\\', '/')
-            win_bash = True
             build = False
             if self.settings.arch == "x86":
                 host = "i686-w64-mingw32"
@@ -69,7 +72,7 @@ class LibiconvConan(ConanFile):
         if self.settings.os == "iOS" and self.settings.arch == "x86_64":
             build = False
 
-        env_build = AutoToolsBuildEnvironment(self, win_bash=win_bash)
+        env_build = AutoToolsBuildEnvironment(self, win_bash=tools.os_info.is_windows)
 
         if self.settings.os != "Windows":
             env_build.fpic = self.options.fPIC
@@ -114,21 +117,7 @@ class LibiconvConan(ConanFile):
                 env_build.install()
 
     def build(self):
-        if self.settings.os == "Windows":
-            if tools.os_info.detect_windows_subsystem() not in ("cygwin", "msys2"):
-                raise ConanInvalidConfiguration("This recipe needs a Windows Subsystem to be compiled. "
-                                "You can specify a build_require to:"
-                                " 'msys2_installer/latest@bincrafters/stable' or"
-                                " 'cygwin_installer/2.9.0@bincrafters/stable' or"
-                                " put in the PATH your own installation")
-            if self._is_msvc:
-                with tools.vcvars(self.settings):
-                    self._build_autotools()
-            elif self._is_mingw_windows:
-                self._build_autotools()
-            else:
-                raise ConanInvalidConfiguration("unsupported build")
-        else:
+        with tools.vcvars(self.settings) if self._is_msvc else tools.no_op():
             self._build_autotools()
 
     def package(self):
