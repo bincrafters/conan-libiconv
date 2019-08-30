@@ -9,7 +9,7 @@ import glob
 
 class LibiconvConan(ConanFile):
     name = "libiconv"
-    version = "1.15"
+    version = "1.16"
     description = "Convert text to and from Unicode"
     url = "https://github.com/bincrafters/conan-libiconv"
     homepage = "https://www.gnu.org/software/libiconv/"
@@ -47,7 +47,7 @@ class LibiconvConan(ConanFile):
         archive_name = "{0}-{1}".format(self.name, self.version)
         source_url = "https://ftp.gnu.org/gnu/libiconv"
         tools.get("{0}/{1}.tar.gz".format(source_url, archive_name),
-                  sha256="ccf536620a45458d26ba83887a983b96827001e92a13847b45e4925cc8913178")
+                  sha256="e6a1b1b589654277ee790cce3734f07876ac4ccfaecbee8afa0b649cf529cc04")
         os.rename(archive_name, self._source_subfolder)
 
     def _build_autotools(self):
