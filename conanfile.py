@@ -34,7 +34,7 @@ class LibiconvConan(ConanFile):
     def build_requirements(self):
         if tools.os_info.is_windows:
             if "CONAN_BASH_PATH" not in os.environ:
-                self.build_requires("cygwin_installer/2.9.0@bincrafters/stable")
+                self.build_requires("msys2_installer/latest@bincrafters/stable")
 
     def configure(self):
         del self.settings.compiler.libcxx
